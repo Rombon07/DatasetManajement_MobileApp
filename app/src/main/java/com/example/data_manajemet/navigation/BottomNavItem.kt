@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val title: String) {
     object Dashboard : BottomNavItem("dashboard", Icons.Filled.Home, "Dashboard")
     object MyData : BottomNavItem("mydata", Icons.Filled.List, "My Data")
-    object UploadDataset : BottomNavItem("upload_dataset", Icons.Default.AddCircle, "Upload")
+    object UploadDataset : BottomNavItem("upload_step1", Icons.Default.AddCircle, "Upload")  // <-- diubah route-nya
     object Help : BottomNavItem("help", Icons.Filled.Help, "Help")
     object Settings : BottomNavItem("settings", Icons.Filled.Settings, "Settings")
 }

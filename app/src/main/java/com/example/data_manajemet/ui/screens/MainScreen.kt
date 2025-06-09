@@ -17,6 +17,9 @@ import com.example.data_manajemet.viewmodel.DatasetViewModelFactory
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import com.example.data_manajemet.navigation.Screen
+import com.example.data_manajemet.ui.screens.UploadDatasetTwoStep.UploadDatasetStep1Screen
+import android.net.Uri
+
 
 @Composable
 fun MainScreen(
@@ -80,10 +83,15 @@ fun MainScreen(
                         datasetViewModel.deleteDataset(dataset)
                     }
                 )
-                is BottomNavItem.UploadDataset -> UploadDatasetScreen(
-                    viewModel = datasetViewModel,
+                is BottomNavItem.UploadDataset -> UploadDatasetStep1Screen(
                     navController = navController,
-                    userId = userId
+                    userId = userId,
+                    onNext = { name, description, uploadDate ->
+                        val encodedName = Uri.encode(name)
+                        val encodedDescription = Uri.encode(description)
+                        val encodedDate = Uri.encode(uploadDate)
+                        navController.navigate("upload_step2/$userId/$encodedDate/$encodedName/$encodedDescription")
+                    }
                 )
                 is BottomNavItem.Help -> HelpScreen()
                 is BottomNavItem.Settings -> SettingsScreen(navController)

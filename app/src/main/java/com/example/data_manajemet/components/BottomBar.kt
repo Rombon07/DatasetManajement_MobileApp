@@ -17,12 +17,11 @@ fun BottomBar(
 ) {
     NavigationBar {
         items.forEachIndexed { index, item ->
-            if (item.route == "upload") {
-                // FAB-style tombol upload di tengah
+            if (item.route == "upload_step1") {
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(top = -20.dp),
+                        .offset(y = (-5).dp),
                     contentAlignment = Alignment.TopCenter
                 ) {
                     FloatingActionButton(
