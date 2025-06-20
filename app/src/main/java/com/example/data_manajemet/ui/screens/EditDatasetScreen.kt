@@ -20,6 +20,9 @@ import com.example.data_manajemet.util.copyFileToInternalStorage
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+
 
 @Composable
 fun EditDatasetScreen(
@@ -35,6 +38,7 @@ fun EditDatasetScreen(
     var coverUri by remember { mutableStateOf(dataset.coverUri?.let { Uri.parse(it) }) }
     var datasetFileUri by remember { mutableStateOf(dataset.datasetFileUri?.let { Uri.parse(it) }) }
     var uploadDate by remember { mutableStateOf(dataset.uploadDate) }
+    var status by remember { mutableStateOf(dataset.status ?: "New") }
     var showDatePicker by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
 
@@ -90,11 +94,46 @@ fun EditDatasetScreen(
             Text(if (uploadDate.isBlank()) "Pilih Tanggal Upload" else "Tanggal: $uploadDate")
         }
 
+        // Dropdown untuk status
+        var expanded by remember { mutableStateOf(false) }
+        val statusOptions = listOf("New", "On Progress", "Complete")
+
+        Box {
+            OutlinedTextField(
+                value = status,
+                onValueChange = {},
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Status") },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { expanded = true }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Pilih Status"
+                        )
+                    }
+                }
+            )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                statusOptions.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            status = option
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
         Button(onClick = { coverLauncher.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
             Text("Ubah Cover Gambar")
         }
 
-        // Preview cover image dari Uri baru atau path lama
         (coverUri?.toString() ?: dataset.coverUri)?.let { path ->
             Image(
                 painter = rememberAsyncImagePainter(
@@ -127,7 +166,6 @@ fun EditDatasetScreen(
                         return@Button
                     }
 
-                    // Salin file baru jika ada perubahan
                     val newCoverPath = coverUri?.let {
                         if (it.toString() != dataset.coverUri) {
                             copyFileToInternalStorage(context, it, "cover_${System.currentTimeMillis()}.jpg")
@@ -150,7 +188,8 @@ fun EditDatasetScreen(
                         description = description.trim(),
                         coverUri = newCoverPath,
                         datasetFileUri = newDatasetFilePath,
-                        uploadDate = uploadDate
+                        uploadDate = uploadDate,
+                        status = status
                     )
 
                     viewModel.updateDataset(updatedDataset)

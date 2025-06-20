@@ -13,20 +13,22 @@ import androidx.navigation.NavController
 import com.example.data_manajemet.ui.components.DatePickerDialog
 import com.example.data_manajemet.viewmodel.DatasetViewModel
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UploadDatasetStep1Screen(
     navController: NavController,
     userId: Int,
-    onNext: (String, String, String) -> Unit // Kirim data ke step selanjutnya
+    onNext: (String, String, String, String) -> Unit // Tambahkan status ke parameter
 ) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var uploadDate by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
+    var selectedStatus by remember { mutableStateOf("New") } // Default "New"
+    var expanded by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
+    val statusOptions = listOf("New", "On Progress", "Complete")
 
     if (showDatePicker) {
         DatePickerDialog(
@@ -40,8 +42,7 @@ fun UploadDatasetStep1Screen(
         )
     }
 
-    // Cek apakah semua kolom sudah terisi
-    val isFormValid = name.isNotBlank() && description.isNotBlank() && uploadDate.isNotBlank()
+    val isFormValid = name.isNotBlank() && description.isNotBlank() && uploadDate.isNotBlank() && selectedStatus.isNotBlank()
 
     Column(
         modifier = Modifier
@@ -50,7 +51,7 @@ fun UploadDatasetStep1Screen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Upload Dataset", style = MaterialTheme.typography.headlineMedium)
+        Text("Upload Dataset - Step 1", style = MaterialTheme.typography.headlineMedium)
 
         OutlinedTextField(
             value = name,
@@ -71,13 +72,42 @@ fun UploadDatasetStep1Screen(
             Text(if (uploadDate.isBlank()) "Pilih Tanggal Upload" else "Tanggal: $uploadDate")
         }
 
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            OutlinedTextField(
+                value = selectedStatus,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Status Dataset") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                statusOptions.forEach { status ->
+                    DropdownMenuItem(
+                        text = { Text(status) },
+                        onClick = {
+                            selectedStatus = status
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
         Button(
             onClick = {
-                // Kirim data ke langkah selanjutnya
-                onNext(name, description, uploadDate)
+                onNext(name, description, uploadDate, selectedStatus)
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = isFormValid  // Hanya aktif jika form valid
+            enabled = isFormValid
         ) {
             Text("Berikutnya")
         }

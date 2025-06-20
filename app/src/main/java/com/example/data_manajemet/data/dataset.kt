@@ -11,5 +11,6 @@ data class Dataset(
     val coverUri: String?,
     val datasetFileUri: String?,
     val uploadDate: String,
+    val status: String = "New",
     val userId: Int
 )

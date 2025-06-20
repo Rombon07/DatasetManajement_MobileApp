@@ -86,11 +86,13 @@ fun MainScreen(
                 is BottomNavItem.UploadDataset -> UploadDatasetStep1Screen(
                     navController = navController,
                     userId = userId,
-                    onNext = { name, description, uploadDate ->
+                    onNext = { name, description, uploadDate, selectedStatus ->
                         val encodedName = Uri.encode(name)
                         val encodedDescription = Uri.encode(description)
                         val encodedDate = Uri.encode(uploadDate)
-                        navController.navigate("upload_step2/$userId/$encodedDate/$encodedName/$encodedDescription")
+                        val encodedStatus = Uri.encode(selectedStatus)
+
+                        navController.navigate("upload_step2/$userId/$encodedDate/$encodedName/$encodedDescription/$encodedStatus")
                     }
                 )
                 is BottomNavItem.Help -> HelpScreen()

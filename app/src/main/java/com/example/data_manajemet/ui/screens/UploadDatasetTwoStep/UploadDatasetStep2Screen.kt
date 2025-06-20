@@ -21,6 +21,8 @@ import com.example.data_manajemet.data.Dataset
 import com.example.data_manajemet.util.copyFileToInternalStorage
 import com.example.data_manajemet.viewmodel.DatasetViewModel
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun UploadDatasetStep2Screen(
@@ -29,7 +31,8 @@ fun UploadDatasetStep2Screen(
     userId: Int,
     uploadDate: String,
     name: String,
-    description: String
+    description: String,
+    status: String
 ) {
     val context = LocalContext.current
 
@@ -39,33 +42,37 @@ fun UploadDatasetStep2Screen(
     var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
     var hasCameraPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA)
+                    == PackageManager.PERMISSION_GRANTED
         )
     }
     var message by remember { mutableStateOf("") }
 
     val scrollState = rememberScrollState()
 
+    // Launchers
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasCameraPermission = granted
-    }
+    ) { granted -> hasCameraPermission = granted }
 
-    val coverLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null) {
-            coverUri = uri
+    val coverLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            coverUri = it
             savedCoverPath = null
         }
     }
 
-    val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null) {
-            datasetFileUri = uri
-        }
+    val fileLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { datasetFileUri = it }
     }
 
-    val takePictureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
         if (success) {
             coverUri = cameraImageUri
             savedCoverPath = null
@@ -73,7 +80,7 @@ fun UploadDatasetStep2Screen(
     }
 
     fun createImageFile(): File {
-        val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "IMG_$timestamp"
         val storageDir = context.cacheDir
         return File.createTempFile(fileName, ".jpg", storageDir)
@@ -88,8 +95,12 @@ fun UploadDatasetStep2Screen(
     ) {
         Text("Upload Dataset - Step 2", style = MaterialTheme.typography.headlineMedium)
 
+        // Cover Image Buttons
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { coverLauncher.launch("image/*") }, modifier = Modifier.weight(1f)) {
+            Button(
+                onClick = { coverLauncher.launch("image/*") },
+                modifier = Modifier.weight(1f)
+            ) {
                 Text("Pilih Gambar")
             }
 
@@ -114,24 +125,32 @@ fun UploadDatasetStep2Screen(
             }
         }
 
+        // Preview Cover Image
         (savedCoverPath ?: coverUri?.toString())?.let { path ->
             Image(
                 painter = rememberAsyncImagePainter(
                     model = if (path.startsWith("content://")) Uri.parse(path) else File(path)
                 ),
                 contentDescription = "Cover Image",
-                modifier = Modifier.fillMaxWidth().height(150.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
             )
         }
 
-        Button(onClick = { fileLauncher.launch("*/*") }, modifier = Modifier.fillMaxWidth()) {
+        // Upload Dataset File
+        Button(
+            onClick = { fileLauncher.launch("*/*") },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text("Unggah File Dataset (.csv / .xlsx)")
         }
 
         datasetFileUri?.let {
-            Text("File terpilih: ${it.lastPathSegment ?: "Unknown"}")
+            Text("File terpilih: ${it.lastPathSegment ?: "Tidak diketahui"}")
         }
 
+        // Simpan Dataset Button
         Button(
             onClick = {
                 if (coverUri == null || datasetFileUri == null) {
@@ -155,11 +174,14 @@ fun UploadDatasetStep2Screen(
                     coverUri = coverPath,
                     datasetFileUri = datasetFilePath,
                     uploadDate = uploadDate,
+                    status = status,
                     userId = userId
                 )
 
                 viewModel.addDataset(dataset)
-                navController.navigate("dashboard") { popUpTo("upload/$userId") { inclusive = true } }
+                navController.navigate("dashboard") {
+                    popUpTo("upload_step1/$userId") { inclusive = true }
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -167,7 +189,11 @@ fun UploadDatasetStep2Screen(
         }
 
         if (message.isNotEmpty()) {
-            Text(message, color = MaterialTheme.colorScheme.primary)
+            Text(
+                message,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
     }
 }
