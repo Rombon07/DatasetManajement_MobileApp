@@ -1,9 +1,15 @@
 package com.example.data_manajemet.ui.screens
 
+import android.content.Context
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -21,84 +27,112 @@ fun RegisterScreen(navController: NavController, db: AppDatabase) {
     var confirmPassword by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFB388FF), // Ungu muda
+                        Color.White
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        Text("Register", style = MaterialTheme.typography.headlineMedium)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    "Buat Akun Baru",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color(0xFF6A1B9A)
+                )
 
-        Spacer(Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-        TextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Username") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-        Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Konfirmasi Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-        TextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
+                Button(
+                    onClick = {
+                        if (username.isBlank() || password.isBlank()) {
+                            message = "Username dan Password tidak boleh kosong"
+                            return@Button
+                        }
+                        if (password != confirmPassword) {
+                            message = "Password dan konfirmasi tidak cocok"
+                            return@Button
+                        }
 
-        Spacer(Modifier.height(8.dp))
+                        scope.launch {
+                            val existingUser = userDao.getUserByUsername(username)
+                            if (existingUser != null) {
+                                message = "Username sudah dipakai"
+                            } else {
+                                userDao.insert(User(username = username, password = password))
+                                message = "Registrasi berhasil, silakan login"
+                                navController.navigate("login") {
+                                    popUpTo("register") { inclusive = true }
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7E57C2))
+                ) {
+                    Text("Register", color = Color.White)
+                }
 
-        TextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
-            label = { Text("Confirm Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
+                TextButton(
+                    onClick = {
+                        navController.navigate("login") {
+                            popUpTo("register") { inclusive = true }
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Text("Sudah punya akun? Login disini", color = Color(0xFF6A1B9A))
+                }
 
-        Spacer(Modifier.height(16.dp))
-
-        Button(onClick = {
-            if (username.isBlank() || password.isBlank()) {
-                message = "Username dan Password tidak boleh kosong"
-                return@Button
-            }
-            if (password != confirmPassword) {
-                message = "Password dan konfirmasi tidak cocok"
-                return@Button
-            }
-
-            scope.launch {
-                val existingUser = userDao.getUserByUsername(username)
-                if (existingUser != null) {
-                    message = "Username sudah dipakai"
-                } else {
-                    userDao.insert(User(username = username, password = password))
-                    message = "Registrasi berhasil, silakan login"
-                    navController.navigate("login") {
-                        popUpTo("register") { inclusive = true }
-                    }
+                if (message.isNotEmpty()) {
+                    Text(
+                        message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
-        }, modifier = Modifier.fillMaxWidth()) {
-            Text("Register")
         }
-
-        TextButton(onClick = {
-            navController.navigate("login") {
-                popUpTo("register") { inclusive = true }
-            }
-        }) {
-            Text("Sudah punya akun? Ayo Login disini!")
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(message, color = MaterialTheme.colorScheme.error)
     }
 }

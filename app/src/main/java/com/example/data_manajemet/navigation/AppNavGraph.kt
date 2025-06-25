@@ -160,6 +160,11 @@ fun AppNavGraph(navController: NavHostController, dao: DatasetDao, db: AppDataba
             }
         }
 
+        composable(Screen.RequestList.route) {
+            RequestListScreen()
+        }
+
+
         composable(Screen.Help.route) {
             HelpScreen()
         }

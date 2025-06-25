@@ -80,6 +80,14 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
 
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    // GSON converter untuk JSON parsing
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // OkHttp untuk logging
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+
     // Unit Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
