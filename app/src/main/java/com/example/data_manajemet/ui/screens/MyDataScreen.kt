@@ -33,7 +33,9 @@ fun MyDataScreen(
     val datasets by viewModel.userDatasetList.collectAsState()
     var filterText by remember { mutableStateOf("") }
 
+
     LaunchedEffect(userId) {
+        viewModel.syncDatasets()
         viewModel.loadDatasetsByUser(userId)
     }
 
@@ -273,3 +275,4 @@ fun ExpandableDatasetRow(
         }
     }
 }
+

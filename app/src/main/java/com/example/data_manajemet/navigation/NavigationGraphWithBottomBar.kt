@@ -2,6 +2,7 @@ package com.example.data_manajemet.navigation
 
 import MyDataScreen
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -10,25 +11,40 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.data_manajemet.data.AppDatabase
+import com.example.data_manajemet.network.DatasetApiService
+import com.example.data_manajemet.repository.DatasetRepository
 import com.example.data_manajemet.ui.screens.*
 import com.example.data_manajemet.viewmodel.DatasetViewModel
 import com.example.data_manajemet.viewmodel.DatasetViewModelFactory
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 @Composable
 fun NavigationGraphWithBottomBar(
     navController: NavHostController,
-    db: AppDatabase,
-    modifier: Modifier = Modifier
+    db: AppDatabase
 ) {
-    val datasetViewModel: DatasetViewModel = viewModel(
-        factory = DatasetViewModelFactory(db.datasetDao())
-    )
+    // Buat Retrofit ApiService
+    val apiService = remember {
+        Retrofit.Builder()
+            .baseUrl("http://172.16.59.234:8000/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(com.example.data_manajemet.network.DatasetApiService::class.java)
+    }
 
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Dashboard.route,
-        modifier = modifier
-    ) {
+    // Buat Repository
+        val repository = remember {
+            DatasetRepository(apiService, db.datasetDao())
+        }
+
+    // Buat ViewModel
+        val datasetViewModel: DatasetViewModel = viewModel(
+            factory = DatasetViewModelFactory(db.datasetDao(), repository)
+        )
+
+
+    NavHost(navController = navController, startDestination = Screen.Dashboard.route) {
         composable(Screen.Dashboard.route) {
             DashboardScreen(
                 viewModel = datasetViewModel,

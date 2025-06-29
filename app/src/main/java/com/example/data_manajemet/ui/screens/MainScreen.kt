@@ -15,20 +15,38 @@ import com.example.data_manajemet.components.BottomBar
 import com.example.data_manajemet.data.AppDatabase
 import com.example.data_manajemet.navigation.BottomNavItem
 import com.example.data_manajemet.navigation.Screen
+import com.example.data_manajemet.repository.DatasetRepository
+import com.example.data_manajemet.repository.RequestRepository
 import com.example.data_manajemet.ui.screens.UploadDatasetTwoStep.UploadDatasetStep1Screen
 import com.example.data_manajemet.viewmodel.DatasetViewModel
 import com.example.data_manajemet.viewmodel.DatasetViewModelFactory
+import com.example.data_manajemet.viewmodel.RequestListViewModel
+import com.example.data_manajemet.viewmodel.RequestListViewModelFactory
 
 @Composable
 fun MainScreen(
     navController: NavHostController,
     db: AppDatabase,
+    repository: DatasetRepository
 ) {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     val userId = sharedPreferences.getInt("userId", -1)
 
-    // Cek login, redirect jika tidak login
+    val datasetViewModel: DatasetViewModel = viewModel(
+        factory = DatasetViewModelFactory(
+            dao = db.datasetDao(),
+            repository = repository
+        )
+    )
+
+    val requestListViewModel: RequestListViewModel = viewModel(
+        factory = RequestListViewModelFactory(
+            requestRepository = RequestRepository(),
+            datasetRepository = repository
+        )
+    )
+
     LaunchedEffect(userId) {
         if (userId == -1) {
             navController.navigate(Screen.Login.route) {
@@ -38,10 +56,6 @@ fun MainScreen(
     }
 
     if (userId == -1) return
-
-    val datasetViewModel: DatasetViewModel = viewModel(
-        factory = DatasetViewModelFactory(db.datasetDao())
-    )
 
     val bottomNavItems = listOf(
         BottomNavItem.Dashboard,
@@ -106,7 +120,9 @@ fun MainScreen(
                 }
 
                 is BottomNavItem.RequestList -> {
-                    RequestListScreen()
+                    RequestListScreen(
+                        viewModel = requestListViewModel
+                    )
                 }
 
                 is BottomNavItem.Settings -> {

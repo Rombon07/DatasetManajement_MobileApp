@@ -1,35 +1,67 @@
 package com.example.data_manajemet.navigation
 
 import MyDataScreen
-import android.text.Layout
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.produceState
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.data_manajemet.data.AppDatabase
 import com.example.data_manajemet.data.Dataset
 import com.example.data_manajemet.data.DatasetDao
+import com.example.data_manajemet.network.DatasetApiService
+import com.example.data_manajemet.repository.DatasetRepository
+import com.example.data_manajemet.repository.RequestRepository
 import com.example.data_manajemet.ui.screens.*
 import com.example.data_manajemet.ui.screens.UploadDatasetTwoStep.UploadDatasetStep1Screen
 import com.example.data_manajemet.ui.screens.UploadDatasetTwoStep.UploadDatasetStep2Screen
 import com.example.data_manajemet.viewmodel.DatasetViewModel
 import com.example.data_manajemet.viewmodel.DatasetViewModelFactory
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.material3.Text
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
+import com.example.data_manajemet.viewmodel.RequestListViewModel
+import com.example.data_manajemet.viewmodel.RequestListViewModelFactory
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.net.URLDecoder
 import java.net.URLEncoder
 
 @Composable
-fun AppNavGraph(navController: NavHostController, dao: DatasetDao, db: AppDatabase) {
-    val datasetViewModel: DatasetViewModel = viewModel(factory = DatasetViewModelFactory(dao))
+fun AppNavGraph(
+    navController: NavHostController,
+    dao: DatasetDao,
+    db: AppDatabase
+) {
+    // Retrofit API Service
+    val apiService = remember {
+        Retrofit.Builder()
+            .baseUrl("http://172.16.59.234:8000/") // Ganti sesuai server kamu
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(DatasetApiService::class.java)
+    }
+
+    val repository = remember { DatasetRepository(apiService, dao) }
+
+    val datasetViewModel: DatasetViewModel = viewModel(
+        factory = DatasetViewModelFactory(
+            dao = db.datasetDao(),
+            repository = repository
+        )
+    )
+
+    val requestRepository = remember { RequestRepository() }
+    val requestListViewModel: RequestListViewModel = viewModel(
+        factory = RequestListViewModelFactory(requestRepository, repository)
+    )
+
+    LaunchedEffect(Unit) {
+        datasetViewModel.syncDatasets()
+    }
 
     NavHost(navController = navController, startDestination = "landing") {
 
@@ -46,7 +78,11 @@ fun AppNavGraph(navController: NavHostController, dao: DatasetDao, db: AppDataba
         }
 
         composable(Screen.Dashboard.route) {
-            MainScreen(navController = navController, db = db)
+            MainScreen(
+                navController = navController,
+                db = db,
+                repository = repository
+            )
         }
 
         composable(
@@ -62,7 +98,6 @@ fun AppNavGraph(navController: NavHostController, dao: DatasetDao, db: AppDataba
                     val encodedDescription = URLEncoder.encode(description, "UTF-8")
                     val encodedUploadDate = URLEncoder.encode(uploadDate, "UTF-8")
                     val encodedStatus = URLEncoder.encode(selectedStatus, "UTF-8")
-
                     navController.navigate(
                         "upload_step2/$userId/$encodedUploadDate/$encodedName/$encodedDescription/$encodedStatus"
                     )
@@ -124,10 +159,14 @@ fun AppNavGraph(navController: NavHostController, dao: DatasetDao, db: AppDataba
                 DatasetDetailScreen(
                     datasetId = datasetId,
                     dao = dao,
+                    repository = repository,
                     navController = navController
                 )
             } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text("Dataset ID tidak valid")
                 }
             }
@@ -161,9 +200,10 @@ fun AppNavGraph(navController: NavHostController, dao: DatasetDao, db: AppDataba
         }
 
         composable(Screen.RequestList.route) {
-            RequestListScreen()
+            RequestListScreen(
+                viewModel = requestListViewModel
+            )
         }
-
 
         composable(Screen.Help.route) {
             HelpScreen()

@@ -33,19 +33,21 @@ import com.github.mikephil.charting.data.CandleDataSet
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.data_manajemet.data.createCandleDataFromEntries
 import com.example.data_manajemet.data.createCandleEntriesFromPreview
+import com.example.data_manajemet.repository.DatasetRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatasetDetailScreen(
     datasetId: Int,
     dao: DatasetDao,
+    repository: DatasetRepository,
     navController: NavHostController
 ) {
     val context = LocalContext.current
     var previewLines by remember { mutableStateOf<List<List<String>>>(emptyList()) }
     var selectedColumnIndex by remember { mutableStateOf(0) }
     var menuExpanded by remember { mutableStateOf(false) }
-    val factory = DatasetViewModelFactory(dao)
+    val factory = DatasetViewModelFactory(dao, repository)
     val viewModel: DatasetViewModel = androidx.lifecycle.viewmodel.compose.viewModel(factory = factory)
     val dataset by viewModel.getDatasetByIdFlow(datasetId).collectAsState(initial = null)
 
